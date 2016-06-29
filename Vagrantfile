@@ -8,8 +8,7 @@
 # that VM.
 
 PROVISION = <<PROVISION
-st.none() |
-sudo apt-get install -y git python34
+sudo apt-get install -y git python3
 
 sudo python3 /vagrant/tools/get-pip.py
 
