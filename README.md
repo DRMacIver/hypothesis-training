@@ -44,7 +44,7 @@ started (assuming you are on Linux or OSX and already have virtualenv
 installed):
 
 ```
-python -m virtualenv trainng
+python -m virtualenv training
 source training/bin/activate
 pip install -r requirements.txt
 ```
