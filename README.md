@@ -38,6 +38,8 @@ If you use Vagrant, the Vagrantfile at the root of this repository will
 give you an environment you can work in. This is not necessary and is
 merely a convenience for people who prefer to work that way.
 
+If you use [Tox], you can also run the tests by invoking the `tox` command.
+
 Otherwise, you will need to install Hypothesis and py.test. If you want
 to work in a virtualenv (which I'd encourage) the following will get you
 started (assuming you are on Linux or OSX and already have virtualenv
@@ -52,6 +54,8 @@ pip install -r requirements.txt
 If you get an error like 'no module named virtualenv' you need to run
 `pip install virtualenv` (this may require sudo depending on your
 system).
+
+[Tox]: http://tox.testrun.org/
 
 ## Running the tests
 
