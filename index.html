@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+
+    <title>Thinking in property based tests</title>
+
+    <meta name="description" content="Making your tests do the work for you.">
+    <meta name="author" content="David R. MacIver">
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+    <link rel="stylesheet" href="reveal/css/reveal.css">
+    <link rel="stylesheet" href="reveal/css/theme/simple.css" id="theme">
+
+    <!-- Code syntax highlighting -->
+    <link rel="stylesheet" href="reveal/lib/css/zenburn.css">
+
+    <!-- Printing and PDF exports -->
+    <script>
+      var link = document.createElement( 'link' );
+      link.rel = 'stylesheet';
+      link.type = 'text/css';
+      link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal/css/print/pdf.css' : 'reveal/css/print/paper.css';
+      document.getElementsByTagName( 'head' )[0].appendChild( link );
+    </script>
+
+    <!--[if lt IE 9]>
+    <script src="reveal/lib/js/html5shiv.js"></script>
+    <![endif]-->
+
+    <style>
+      .reveal h1 { font-size: 2em; }
+      .reveal h2 { font-size: 1.5em; }
+      .reveal h3 { font-size: 1.25em; }
+      .reveal pre code {
+        padding: 20px 50px 20px 50px !important;
+      }
+      pre.output {
+        display: block;
+        padding: 10px;
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        overflow: auto;
+        max-height: 400px;
+        word-wrap: normal;
+        background: #3F3F3F;
+        color: #DCDCDC; }
+      img {
+        border: none !important;
+      }
+      section.prose ul {
+        text-align: left;
+      }
+    </style>
+  </head>
+
+  <body>
+
+    <div class="reveal">
+
+      <div class="slides">
+
+<section>
+  <h1>Thinking in property based tests</h1>
+</section>
+
+
+<section>
+  <section>
+  <h2>Anatomy of a py.test test</h2>
+  </section>
+
+  <section><pre><code class=python data-trim>
+def test_maths_and_stuff():
+    assert 1 + 1 == 2
+  </code></pre>
+
+  <pre class=fragment><code class=bashdata-trim>
+python -m pytest test_maths.py
+  </code></pre>
+
+
+<pre class="fragment output">
+<span style="font-weight:bold;">
+===================== test session starts ===========================</span>
+
+platform linux -- Python 3.5.1, pytest-2.8.5, py-1.4.31, pluggy-0.3.1
+rootdir: /home/david/projects/hypothesis-talks, inifile: 
+collected 1 items </span><span style="font-weight:bold;">
+</span>
+test_maths.py .
+
+<span style="color:green;font-weight:bold;">
+===================== 1 passed in 0.00 seconds ======================</span>
+</pre></section>
+
+
+<section>
+  <pre><code class=python data-trim>
+def test_maths_and_stuff():
+    assert 1 + 1 == 2
+  </code></pre>
+
+  <pre><code class=bashdata-trim>
+python -m pytest test_maths.py -v
+  </code></pre>
+
+<pre class=output>
+<span style="font-weight:bold;">
+===================== test session starts ===========================</span>
+
+platform linux -- Python 3.5.1, pytest-2.8.5, py-1.4.31, pluggy-0.3.1
+rootdir: /home/david/projects/hypothesis-talks, inifile: 
+collected 1 items </span><span style="font-weight:bold;"></span>
+
+test_maths.py::test_maths_and_stuff <span style="color:green;">PASSED</span>
+
+<span style="color:green;font-weight:bold;">
+===================== 1 passed in 0.00 seconds ======================</span>
+</pre></section>
+
+<section>
+  <pre><code class=python data-trim>
+def test_maths_and_stuff():
+    assert 1 + 1 == 2
+
+def test_more_maths():
+    assert 1 + 2 == 3
+  </code></pre>
+
+  <pre><code class=bashdata-trim>
+python -m pytest test_maths.py -v
+  </code></pre>
+
+<pre class=output>
+<span style="font-weight:bold;">
+===================== test session starts ===========================</span>
+
+platform linux -- Python 3.5.1, pytest-2.8.5, py-1.4.31, pluggy-0.3.1
+rootdir: /home/david/projects/hypothesis-talks, inifile: 
+collected 1 items </span><span style="font-weight:bold;"></span>
+
+test_maths.py::test_maths_and_stuff <span style="color:green;">PASSED</span>
+test_maths.py::test_more_maths <span style="color:green;">PASSED</span>
+
+<span style="color:green;font-weight:bold;">
+===================== 1 passed in 0.00 seconds ======================</span>
+</pre></section>
+
+  <section><pre><code class=python data-trim>
+
+  def test_maths_and_stuff():
+      assert 1 + 1 == 3
+  </code></pre>
+
+<pre class="output fragment">
+test_maths.py::test_maths_and_stuff <span style="color:red;">FAILED</span>
+
+===================== FAILURES ======================================
+<span style="color:red;"></span><span style="color:red;font-weight:bold;">____________ test_maths_and_stuff ____________</span>
+
+<span style="font-weight:bold;">    def test_maths_and_stuff():</span>
+<span style="font-weight:bold;">&gt;       assert 1 + 1 == 3</span>
+<span style="font-weight:bold;"></span><span style="color:red;font-weight:bold;">E       assert (1 + 1) == 3</span>
+
+test_maths.py:2: AssertionError
+<span style="color:red;font-weight:bold;">
+
+===================== 1 failed in 0.00 seconds ======================</span>
+</pre>
+
+</section>
+  <section><pre><code class=python data-trim>
+
+  def test_maths_and_stuff():
+      x = 1
+      assert x + 1 == 3
+  </code></pre>
+
+<pre class="output">
+test_maths.py::test_maths_and_stuff <span style="color:red;">FAILED</span>
+
+===================== FAILURES ======================================
+<span style="color:red;"></span><span style="color:red;font-weight:bold;">____________ test_maths_and_stuff ____________</span>
+
+<span style="font-weight:bold;">    def test_maths_and_stuff():</span>
+<span style="font-weight:bold;">&gt;       x = 1</span>
+<span style="font-weight:bold;">&gt;       assert x + 1 == 3</span>
+<span style="font-weight:bold;"></span><span style="color:red;font-weight:bold;">E       assert (1 + 1) == 3</span>
+
+test_maths.py:2: AssertionError
+<span style="color:red;font-weight:bold;">
+
+===================== 1 failed in 0.00 seconds ======================</span>
+</pre>
+</section>
+
+<section>
+<pre><code class=bash data-trim>
+python -m pytest --help
+</code></pre>
+
+<pre class=output>
+usage: pytest.py [options] [file_or_dir] [file_or_dir] [...]
+
+positional arguments:
+  file_or_dir
+
+general:
+  -k EXPRESSION  only run tests which match the given substring
+                 expression. An expression is a python evaluatable
+                 expression where all names are substring-matched
+                 against test names and their parent classes. Example:
+                 -k 'test_method or test other' matches all test
+                 functions and classes whose name contains
+
+...
+</pre>
+
+</section>
+</section>
+
+<section>
+  <section>
+  <h2>Anatomy of a Hypothesis based test</h2>
+  </section>
+  <section>
+<pre><code class=python data-trim>
+
+from hypothesis import given
+import hypothesis.strategies as st
+
+
+@given(st.integers(), st.integers())
+def test_maths_and_stuff(x, y):
+    assert x + y == y + x
+
+  </code></pre>
+</section>
+
+  <section><pre><code class=python data-trim>
+
+from hypothesis import given
+import hypothesis.strategies as st
+
+
+@given(st.integers(), st.integers())
+def test_maths_and_stuff(x, y):
+    assert x - y == y - x
+
+  </code></pre>
+
+<pre class="output fragment">
+<span style="font-weight:bold;">    @given(st.integers(), st.integers())</span>
+<span style="font-weight:bold;">    def test_maths_and_stuff(x, y):</span>
+<span style="font-weight:bold;">&gt;       assert x - y == y - x</span>
+<span style="font-weight:bold;"></span><span style="color:red;font-weight:bold;">E       assert (1 - 0) == (0 - 1)</span>
+
+test_maths.py:7: AssertionError
+
+-------------------- Hypothesis ------------------
+
+Falsifying example: test_maths_and_stuff(x=1, y=0)
+</pre>
+</section>
+</section>
+
+<section>
+<section>
+<h2>Problem #1: Binary search</h2>
+</section>
+
+<section><pre><code class=python data-trim>
+def binsearch(ls, x):
+    """
+    Given ls a sorted list, find and return the smallest index i
+    such that ls.insert(i, x) is sorted.
+    """
+    raise NotImplementedError("Your turn")
+
+
+def test_example1():
+    assert binsearch([2, 5, 7], 3) == 1
+
+def test_example2():
+    assert binsearch([1, 2, 2], 2) == 1
+
+@given(st.lists(st.integers()).map(sorted), st.integers())
+def test_bounds(ls, x):
+    assert 0 &lt;= binsearch(ls, x) &lt;= len(ls)
+
+</code></pre>
+</section>
+
+<section><pre><code class=python data-trim>
+@given(st.lists(st.integers()).map(sorted), st.integers())
+def test_insert_is_sorted(ls, v):
+    ls.insert(binary_search(ls, v), v)
+    assert ls == sorted(ls)
+</code></pre>
+</section>
+
+<section><pre><code class=python data-trim>
+@given(st.lists(st.integers()).map(sorted), st.integers())
+def test_insert_earlier_is_not_sorted(ls, v):
+    i = binary_search(ls, v)
+    for j in range(i):
+        ls2 = list(ls)
+        ls2.insert(j, v)
+        assert ls2 != sorted(ls2)
+</code></pre>
+</section>
+
+<section><pre><code class=python data-trim>
+@given(st.lists(st.integers()).map(sorted), st.integers())
+def test_insert_does_not_change_insert(ls, v):
+    i = binary_search(ls, v)
+    ls.insert(i, v)
+    assert binary_search(ls, v) == i
+</code></pre>
+</section>
+</section>
+
+<section>
+<section>
+<h2>Problem #2: Cron</h2>
+</section>
+
+<section>
+<pre><code class=cron data-trim>
+13 0 # Runs at 13:00
+*  0 # Runs every hour on the hour
+11 * # Runs at 11:00, 11:01, 11:02, ...
+*  * # Runs every minute 
+</code></pre>
+<p class=fragment>(Yes, this is backwards compared to normal cron. Sorry)</p>
+</section>
+
+<section><pre><code class=python data-trim>
+def cron(hour_spec, minute_spec, current_hour, current_minute):
+    # Represents * as None in hour_spec and minute_spec
+    raise NotImplementedError("Your turn")
+
+def test_example1():
+    assert cron(None, 11, 5, 10) == (5, 11)
+
+@given(
+  st.integers(0, 23) | st.none(), st.integers(0, 59) | st.none(), 
+  st.integers(0, 23), st.integers(0, 59)) 
+def test_bounds(hs, ms, ch, cm):
+    h, m = cron(hs, ms, ch, cm)
+    assert 0 &lt;= h &lt; 24
+    assert 0 &lt;= m &lt; 60
+
+</code></pre>
+</section>
+
+<section><pre><code class=python data-trim>
+@given(
+  st.integers(0, 23) | st.none(), st.integers(0, 59) | st.none(), 
+  st.integers(0, 23), st.integers(0, 59)) 
+def test_answer_is_admissible(hs, ms, ch, cm):
+    h, m = cron(hs, ms, ch, cm)
+    if hs is not None:
+        assert hs == h
+    if ms is not None:
+        assert ms == m
+</code></pre>
+</section>
+
+
+<section><pre><code class=python data-trim>
+@given(
+  st.integers(0, 23) | st.none(), st.integers(0, 59) | st.none(), 
+  st.integers(0, 23), st.integers(0, 59)) 
+def test_widening_produces_earlier_answer(hs, ms, h, m):
+    when = cron(hs, ms, h, m)
+    assume(when &gt; (h, m))
+    assert cron(None, ms, h, m) &lt;= when
+    assert cron(hs, None, h, m) &lt;= when
+</code></pre>
+</section>
+
+
+<section><pre class=stretch><code class=python data-trim>
+@given(
+  st.integers(0, 23) | st.none(), st.integers(0, 59) | st.none(), 
+  st.integers(0, 23), st.integers(0, 59)) 
+def test_agrees_with_brute_force_solution(hs, ms, h, m):
+    if hour_spec is None:
+        allowed_hours = range(24)
+    else:
+        allowed_hours = [hour_spec]
+    if minute_spec is None:
+        allowed_minutes = range(60)
+    else:
+        allowed_minutes = [minute_spec]
+    times = [
+        (h, m) for h in allowed_hours for m in allowed_minutes
+    ]
+    later_times = [
+        t for t in times if (current_hour, current_minute) &lt;= t
+    ]
+    if later_times:
+        assert cron(hs, ms, h, m) == later_times[0]
+    else:
+        assert cron(hs, ms, h, m) == times[0]
+</code></pre>
+</section>
+
+</section>
+
+<section>
+<section>
+<h3>Problem #3: Flood fill</h3>
+<p class=fragment>(Bonus Question)</p>
+</section>
+
+<section>
+<ul>
+<li>We have a rectangular grid of boolean values, and coordinates i, j into this grid.</li>
+<li>If grid[i][j] is True, do nothing. Else, change it to True and also flood fill from any neighbours (not
+  diagonals).</li>
+</ul>
+</section>
+
+<section><pre><code class=pycon data-trim>
+[[False, True, False], [False, False, True]]
+&gt;&gt;&gt; x = [[False, True, False],
+...      [False, False, True]]
+&gt;&gt;&gt; flood_fill(x, 0, 0)
+&gt;&gt;&gt; x
+  [[True, True, False],
+   [True, True, True]]
+</code></pre>
+</section>
+
+
+<section><pre class=stretch><code class=python data-trim>
+def build_problem(fills, i, j):
+    m = max(i, max(u for u, _ in fills)) + 1
+    n = max(j, max(v for _, v in fills)) + 1
+    grid = [[(u, v) in fills for v in range(n)] for u in range(m)]
+    grid[i][j] = False
+    return grid, i, j
+
+Indices = st.integers(0, 9)
+
+Problems = st.builds(
+    build_problem,
+    st.sets(
+        st.tuples(Indices, Indices), min_size=1, average_size=50),
+    Indices, Indices
+)
+
+
+@given(Problems)
+def test_flood_fill_fills_point(problem):
+    grid, i, j = problem
+    flood_fill(grid, i, j)
+    assert grid[i][j]
+</code></pre>
+</section>
+
+
+<section><pre><code class=python data-trim>
+@given(Problems)
+def test_flood_fill_fills_adjacent_points(problem):
+    grid, i, j = problem
+    m = len(grid)
+    n = len(grid[0])
+    flood_fill(grid, i, j)
+    for u, v in [
+      (i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)
+    ]:
+        if 0 &lt;= u &lt; m and 0 &lt;= v &lt; n:
+            assert grid[u][v]
+</code></pre>
+</section>
+
+<section><pre><code class=python data-trim>
+def count_grid(grid):
+    return sum(l.count(True) for l in grid)
+
+@given(Problems)
+def test_flood_fill_increases_count(problem):
+    grid, i, j = problem
+    count = count_grid(grid)
+    flood_fill(grid, i, j)
+    assert count_grid(grid) &gt;= count + 1
+</code></pre>
+</section>
+
+<section><pre><code class=python data-trim>
+def transpose(grid):
+    m = len(grid)
+    n = len(grid[0])
+    return [[grid[i][j] for i in range(m)] for j in range(n)]
+
+
+@given(Problems)
+def test_commutes_with_transposing(problem):
+    grid, i, j = problem
+    grid2 = transpose(grid)
+
+    flood_fill(grid, i, j)
+    flood_fill(grid2, j, i)
+    assert grid == transpose(grid2)
+</code></pre></section>
+
+
+
+<section><pre><code class=python data-trim>
+@given(Problems)
+def test_flood_filling_from_a_filled_point_is_the_same(problem):
+    grid, i, j = problem
+    original = deepcopy(grid)
+    flood_fill(grid, i, j)
+    for u in range(len(original)):
+        for v in range(len(original[u])):
+            if grid[u][v] and not original[u][v]:
+                newgrid = deepcopy(original)
+                flood_fill(newgrid, u, v)
+                assert newgrid == grid
+
+</code></pre></section>
+
+<section><pre><code class=python data-trim>
+@given(Problems)
+def test_flood_filling_from_unfilled_does_not_return(problem):
+    grid, i, j = problem
+    original = deepcopy(grid)
+    flood_fill(grid, i, j)
+    for u in range(len(original)):
+        for v in range(len(original[u])):
+            if not grid[u][v]:
+                newgrid = deepcopy(original)
+                flood_fill(newgrid, u, v)
+                assert not newgrid[i][j]
+</code></pre></section>
+
+
+
+</section>
+<section>
+<h2>And that's a wrap</h2>
+<p class=fragment>Any questions?</p>
+</section>
+</section>
+
+
+    <script src="reveal/lib/js/head.min.js"></script>
+    <script src="reveal/js/reveal.js"></script>
+
+    <script>
+
+      Reveal.initialize({
+        controls: true,
+        progress: true,
+        history: true,
+        center: true,
+
+        transition: 'fade',
+
+        dependencies: [
+          { src: 'reveal/plugin/highlight/highlight.js', async: true, condition: function() { return !!document.querySelector( 'pre code' ); }, callback: function() { hljs.initHighlightingOnLoad(); } },
+          { src: 'reveal/plugin/zoom-js/zoom.js', async: true },
+          { src: 'reveal/plugin/notes/notes.js', async: true }
+        ]
+      });
+
+    </script>
+
+  </body>
+</html>
