@@ -48,6 +48,19 @@ class Image(object):
             ))
         return self.width * y + x
 
+    def __eq__(self, other):
+        return isinstance(other, Image) and self.to_data() == other.to_data()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        return "Image(%r, %r, %r)" % (
+            self.width, self.height, self.to_data()
+        )
+
+    def copy(self):
+        return Image(self.width, self.height, self.to_data())
 
 def flood_fill(image, x, y, replace):
     """Set image[x, y] to colour replace, along with any pixels of the same
