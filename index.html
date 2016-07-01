@@ -273,29 +273,35 @@ Falsifying example: test_maths_and_stuff(x=1, y=0)
 
 <section>
 <section>
-<h2>Problem #1: Binary search</h2>
+<h2>Problem #1: Run Length Encoding</h2>
 </section>
 
 <section><pre><code class=python data-trim>
-def binsearch(ls, x):
-    """
-    Given ls a sorted list, find and return the smallest index i
-    such that ls.insert(i, x) is sorted.
-    """
-    raise NotImplementedError("Your turn")
-
-
-def test_example1():
-    assert binsearch([2, 5, 7], 3) == 1
-
-def test_example2():
-    assert binsearch([1, 2, 2], 2) == 1
-
-@given(st.lists(st.integers()).map(sorted), st.integers())
-def test_bounds(ls, x):
-    assert 0 &lt;= binsearch(ls, x) &lt;= len(ls)
-
+@given(st.lists(st.integers()))
+def test_encoding_never_crashes(ls):
+    assert run_length_decode(run_length_encode(ls)) == ls
 </code></pre>
+</section>
+
+<section><pre><code class=python data-trim>
+@given(st.lists(st.integers()))
+def test_encoding_never_increases_length(ls):
+    assert len(run_length_encode(ls)) &lt;= len(ls)
+</code></pre>
+</section>
+
+<section><pre><code class=python data-trim>
+@given(st.lists(st.integers()), st.integers(0, 10))
+def test_encode_a_constant(v, n):
+    assert len(run_length_encode([v] * n)) == [(v, n)]
+</code></pre>
+</section>
+
+</section>
+
+<section>
+<section>
+<h2>Problem #2: Binary search</h2>
 </section>
 
 <section><pre><code class=python data-trim>
@@ -329,27 +335,10 @@ def test_insert_does_not_change_insert(ls, v):
 
 <section>
 <section>
-<h2>Problem #2: Cron</h2>
-</section>
-
-<section>
-<pre><code class=cron data-trim>
-13 0 # Runs at 13:00
-*  0 # Runs every hour on the hour
-11 * # Runs at 11:00, 11:01, 11:02, ...
-*  * # Runs every minute 
-</code></pre>
-<p class=fragment>(Yes, this is backwards compared to normal cron. Sorry)</p>
+<h2>Problem #3: Cron</h2>
 </section>
 
 <section><pre><code class=python data-trim>
-def cron(hour_spec, minute_spec, current_hour, current_minute):
-    # Represents * as None in hour_spec and minute_spec
-    raise NotImplementedError("Your turn")
-
-def test_example1():
-    assert cron(None, 11, 5, 10) == (5, 11)
-
 @given(
   st.integers(0, 23) | st.none(), st.integers(0, 59) | st.none(), 
   st.integers(0, 23), st.integers(0, 59)) 
@@ -408,9 +397,9 @@ def test_agrees_with_brute_force_solution(hs, ms, h, m):
         t for t in times if (current_hour, current_minute) &lt;= t
     ]
     if later_times:
-        assert cron(hs, ms, h, m) == later_times[0]
+        assert cron(hs, ms, h, m) == ScheduledTime(False, *later_times[0])
     else:
-        assert cron(hs, ms, h, m) == times[0]
+        assert cron(hs, ms, h, m) == ScheduledTime(True, *times[0])
 </code></pre>
 </section>
 
@@ -418,121 +407,69 @@ def test_agrees_with_brute_force_solution(hs, ms, h, m):
 
 <section>
 <section>
-<h3>Problem #3: Flood fill</h3>
+<h2>Problem #4: Flood fill</h2>
 <p class=fragment>(Bonus Question)</p>
 </section>
 
-<section>
-<ul>
-<li>We have a rectangular grid of boolean values, and coordinates i, j into this grid.</li>
-<li>If grid[i][j] is True, do nothing. Else, change it to True and also flood fill from any neighbours (not
-  diagonals).</li>
-</ul>
-</section>
-
-<section><pre><code class=pycon data-trim>
-[[False, True, False], [False, False, True]]
-&gt;&gt;&gt; x = [[False, True, False],
-...      [False, False, True]]
-&gt;&gt;&gt; flood_fill(x, 0, 0)
-&gt;&gt;&gt; x
-  [[True, True, False],
-   [True, True, True]]
+<section><pre><code class=python data-trim>
+@composite
+def problems(draw):
+    image = draw(images())
+    i = draw(Indices)
+    assume(i &lt; image.width)
+    j = draw(Indices)
+    assume(j &lt; image.height)
+    colour = draw(Pixels)
+    assume(image[i, j] != colour)
+    return image, i, j, colour
 </code></pre>
 </section>
-
-
-<section><pre class=stretch><code class=python data-trim>
-def build_problem(fills, i, j):
-    m = max(i, max(u for u, _ in fills)) + 1
-    n = max(j, max(v for _, v in fills)) + 1
-    grid = [[(u, v) in fills for v in range(n)] for u in range(m)]
-    grid[i][j] = False
-    return grid, i, j
-
-Indices = st.integers(0, 9)
-
-Problems = st.builds(
-    build_problem,
-    st.sets(
-        st.tuples(Indices, Indices), min_size=1, average_size=50),
-    Indices, Indices
-)
-
-
-@given(Problems)
-def test_flood_fill_fills_point(problem):
-    grid, i, j = problem
-    flood_fill(grid, i, j)
-    assert grid[i][j]
-</code></pre>
-</section>
-
 
 <section><pre><code class=python data-trim>
-@given(Problems)
-def test_flood_fill_fills_adjacent_points(problem):
-    grid, i, j = problem
-    m = len(grid)
-    n = len(grid[0])
-    flood_fill(grid, i, j)
+@given(problems())
+def test_flood_fill_fills_point(problem):
+    image, i, j, colour = problem
+    flood_fill(image, i, j, colour)
+    assert image[i, j] == colour
+</code></pre>
+</section>
+
+<section><pre><code class=python data-trim>
+@given(problems())
+def test_flood_fill_clears_adjacent_points(problem):
+    image, i, j, colour = problem
+    m, n = image.size
+    original_colour = image[i, j]
+    flood_fill(grid, i, j, colour)
     for u, v in [
       (i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)
     ]:
         if 0 &lt;= u &lt; m and 0 &lt;= v &lt; n:
-            assert grid[u][v]
-</code></pre>
-</section>
-
-<section><pre><code class=python data-trim>
-def count_grid(grid):
-    return sum(l.count(True) for l in grid)
-
-@given(Problems)
-def test_flood_fill_increases_count(problem):
-    grid, i, j = problem
-    count = count_grid(grid)
-    flood_fill(grid, i, j)
-    assert count_grid(grid) &gt;= count + 1
+            assert grid[u][v] != original_colour
 </code></pre>
 </section>
 
 <section><pre><code class=python data-trim>
 def transpose(grid):
-    m = len(grid)
-    n = len(grid[0])
-    return [[grid[i][j] for i in range(m)] for j in range(n)]
+    m, n = grid.size
+    transposed = Image(n, m)
+    for i in range(m):
+        for j in range(n):
+            transposed[j, i] = grid[i, j]
+    return transposed
 
-
-@given(Problems)
+@given(problems())
 def test_commutes_with_transposing(problem):
-    grid, i, j = problem
+    grid, i, j, colour = problem
     grid2 = transpose(grid)
 
-    flood_fill(grid, i, j)
-    flood_fill(grid2, j, i)
+    flood_fill(grid, i, j, colour)
+    flood_fill(grid2, j, i, colour)
     assert grid == transpose(grid2)
 </code></pre></section>
 
-
-
 <section><pre><code class=python data-trim>
-@given(Problems)
-def test_flood_filling_from_a_filled_point_is_the_same(problem):
-    grid, i, j = problem
-    original = deepcopy(grid)
-    flood_fill(grid, i, j)
-    for u in range(len(original)):
-        for v in range(len(original[u])):
-            if grid[u][v] and not original[u][v]:
-                newgrid = deepcopy(original)
-                flood_fill(newgrid, u, v)
-                assert newgrid == grid
-
-</code></pre></section>
-
-<section><pre><code class=python data-trim>
-@given(Problems)
+@given(problems())
 def test_flood_filling_from_unfilled_does_not_return(problem):
     grid, i, j = problem
     original = deepcopy(grid)
@@ -545,6 +482,23 @@ def test_flood_filling_from_unfilled_does_not_return(problem):
                 assert not newgrid[i][j]
 </code></pre></section>
 
+<section><pre><code class=python data-trim>
+@given(problems(), data())
+def test_reachability_is_symmetric(problem, data):
+    image, i, j, colour = problem
+    original = image[i, j]
+    cloned = image.copy()
+    flood_fill(cloned, i, j, colour)
+    other_points = [
+        (u, v)
+        for u in range(image.width) for v in range(image.height)
+        if cloned[u, v] == original
+    ]
+    assume(other_points)
+    u, v = data.draw(sampled_from(other_points))
+    flood_fill(image, u, v, colour)
+    assert image[i, j] == original
+</code></pre></section>
 
 
 </section>
