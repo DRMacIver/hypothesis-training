@@ -1,0 +1,5 @@
+hypothesis
+pytest
+ipython
+coverage
+flake8
