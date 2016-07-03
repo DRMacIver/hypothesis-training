@@ -1,4 +1,7 @@
 def run_length_encode(ls):
+    """Return a run length encoded version of ls, as a list of pairs where the
+    second element is the length of a run.. e.g. [a, a, b, c, c, c] =>
+    [[a, 2], [b, 1], [c, 3]]"""
     result = []
     current = [0, 0]
     for value in ls:
@@ -11,6 +14,8 @@ def run_length_encode(ls):
 
 
 def run_length_decode(ls):
+    """Decode a previously run length encoded list, giving the original list
+    back. e.g. [a, a, b, c, c, c] => [a, a, b, c, c, c]"""
     result = []
     for value, n in ls:
         for _ in range(n):
