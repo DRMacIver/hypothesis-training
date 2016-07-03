@@ -64,7 +64,8 @@ class Image(object):
 
 def flood_fill(image, x, y, replace):
     """Set image[x, y] to colour replace, along with any pixels of the same
-    colour that are connected to it."""
+    colour that are connected to it by a path that only goes up/down/left/right
+    through pixels of the same colour."""
     xsize, ysize = image.size
     target_colour = image[x, y]
     queue = [(x, y)]
