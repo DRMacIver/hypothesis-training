@@ -1,5 +1,5 @@
 from cron import cron
-from hypothesis import given
+from hypothesis import given, assume
 from hypothesis import strategies as st
 
 
@@ -25,3 +25,10 @@ def test_cron_does_not_crash(
         cron_hour, cron_minute, current_hour, current_minute
 ):
     cron(cron_hour, cron_minute, current_hour, current_minute)
+
+@given( st.integers(0, 23) | st.none(), st.integers(0, 59) | st.none(), st.integers(0, 23), st.integers(0, 59))
+def test_widening_produces_earlier_answer(hs, ms, h, m):
+    when = cron(hs, ms, h, m)
+    assume(when[1:] > (h, m))
+    assert cron(None, ms, h, m) <= when
+    assert cron(hs, None, h, m) <= when
