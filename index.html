@@ -277,6 +277,7 @@ Falsifying example: test_maths_and_stuff(x=1, y=0)
 </section>
 </section>
 <section>
+<section>
 <h2>Bug Hunting</h2>
 <ol>
 <li class=fragment>Write properties</li>
@@ -284,6 +285,27 @@ Falsifying example: test_maths_and_stuff(x=1, y=0)
 <li class=fragment>Fix the bug</li>
 <li class=fragment>Introduce a new bug</li>
 </ol>
+</section>
+<section>
+<h2>Getting Started</h2>
+  <pre><code class=python data-trim>
+def some_function(a, b, c):
+  if (a, b, c) == input1:
+      return value1
+  elif (a, b, c) == input2:
+      return value2
+  else:
+    return some_default_value
+  </code></pre>
+</section>
+<section>
+<h2>Cheating</h2>
+  <pre><code class=python data-trim>
+def some_function(a, b, c):
+  assert (a, b, c) != some_really_rare_input
+  return the_right_thing
+  </code></pre>
+</section>
 </section>
 <section>
 <section>
