@@ -46,7 +46,15 @@ installed):
 ```
 python -m virtualenv training
 source training/bin/activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+```
+
+If you are on Windows the equivalent invocation is:
+
+```
+python -m virtualenv training
+training\Scripts\activate
+python -m pip install -r requirements.txt
 ```
 
 If you get an error like 'no module named virtualenv' you need to run
