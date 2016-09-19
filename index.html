@@ -314,7 +314,7 @@ def some_function(a, b, c):
 
 <section><pre><code class=python data-trim>
 @given(st.lists(st.integers()))
-def test_encoding_never_crashes(ls):
+def test_encoding_round_trip(ls):
     assert run_length_decode(run_length_encode(ls)) == ls
 </code></pre>
 </section>
